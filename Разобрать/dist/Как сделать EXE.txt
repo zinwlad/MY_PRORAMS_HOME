@@ -1,0 +1,16 @@
+Для создания exe-файла из вашего кода можно воспользоваться специальными инструментами, например, PyInstaller или cx_Freeze.
+
+PyInstaller позволяет создавать самодостаточные исполняемые файлы для Windows, macOS и Linux, а cx_Freeze - для Windows и Linux.
+
+Пример использования PyInstaller:
+
+Установите PyInstaller:
+Copy code
+pip install pyinstaller
+Создайте файл main.py, в который скопируйте ваш код.
+Откройте терминал в папке с файлом main.py.
+Выполните команду:
+css
+Copy code
+pyinstaller --onefile main.py
+После завершения работы команды в папке dist будет создан файл main.exe, который можно запустить на любом компьютере с операционной системой Windows.

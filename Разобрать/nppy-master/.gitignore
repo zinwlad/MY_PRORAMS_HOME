@@ -1,0 +1,17 @@
+*.db
+*.txt
+*.json
+OTHERS/
+Packages/
+__pycache__
+Contributions/
+Data*Structure/
+Project*GET_PIC/
+Project*SPYDEER/
+Project*LeetCode/
+Project*Photo*Preview/
+!Project*EULER/p022_names.txt
+!Project*EULER/p042_words.txt
+PROJECT*GUIS/Windows*Activator/
+!PROJECT*GUIs/TEST*TYPING*SPEED/included_files/words.txt
+!PROJECT*GUIs/MUSIC*PLAYER/included_files/ttkbootstrap_themes.json
