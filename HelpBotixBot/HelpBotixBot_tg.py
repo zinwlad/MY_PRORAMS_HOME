@@ -18,7 +18,7 @@ bot = telebot.TeleBot(bot_token)
 # Клавиатуры
 states_menu = types.ReplyKeyboardMarkup(resize_keyboard=True)
 states_menu.row("Вещи", "Поиск", "Коробки")
-
+F:\Python PROGRAMS\venv\Scripts\activate
 items_menu = types.ReplyKeyboardMarkup(resize_keyboard=True)
 items_menu.row("Добавить", "Редактировать", "Удалить")
 items_menu.row("Назад")
