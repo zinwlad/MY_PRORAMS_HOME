@@ -8,22 +8,15 @@ import basic_commands
 import box_management
 import item_management
 import search_commands
-import subprocess
 from commands import commands
 from barcode_scanner import scan_barcode
 
-
-# Задаем путь к файлу CSV
 csv_filename = os.path.join("my_base", "data.csv")
-
-# Инициализация бота с токеном из файла конфигурации
 bot = telebot.TeleBot(bot_token)
 
 # Клавиатуры
 states_menu = types.ReplyKeyboardMarkup(resize_keyboard=True)
 states_menu.row(commands['items'], commands['search'], commands['boxes'], commands['scan'])
-
-
 
 items_menu = types.ReplyKeyboardMarkup(resize_keyboard=True)
 items_menu.row(commands['add'], commands['edit'], commands['delete'])
@@ -40,7 +33,7 @@ back_to_main_menu.row(commands['back'])
 states, current_boxes = basic_commands.setup_basic_commands(bot, states_menu, csv_filename)
 states, current_boxes = box_management.setup_box_management(bot, csv_filename, states_menu, boxes_menu, back_to_main_menu, states, current_boxes)
 states, current_boxes = item_management.setup_item_management(bot, csv_filename, items_menu, back_to_main_menu, states, current_boxes)
-states = search_commands.setup_search_commands(bot, csv_filename, states_menu, back_to_main_menu)  # Добавлен back_to_main_menu
+states = search_commands.setup_search_commands(bot, csv_filename, states_menu, back_to_main_menu)
 
 # Обработчики команд для новых клавиатур
 @bot.message_handler(func=lambda message: message.text == commands['items'])

@@ -3,6 +3,14 @@
 from telebot import types
 import csv
 from commands import commands
+import logging
+
+# Настройка логирования с обработчиком файла
+logging.basicConfig(
+    filename='search_commands.log',  # Укажите желаемое имя файла журнала
+    level=logging.INFO,  # Установите минимальный уровень логирования
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Определите формат сообщения журнала
+)
 
 # Предполагаемая структура функции get_existing_boxes
 def get_existing_boxes(csv_filename):
@@ -28,22 +36,26 @@ def setup_search_commands(bot, csv_filename, states_menu, back_to_main_menu):
 
     @bot.message_handler(func=lambda message: message.text == commands['search'])
     def handle_search_command(message):
+        logging.info(f"Пользователь {message.chat.id} начал поиск вещи.")
         bot.send_message(message.chat.id, "Введите название вещи для поиска:", reply_markup=types.ReplyKeyboardRemove())
         states[message.chat.id] = "item_search"
 
     @bot.message_handler(func=lambda message: states.get(message.chat.id) == "item_search")
     def search_item(message):
         item_name = message.text
-        found = False
+        logging.info(f"Пользователь {message.chat.id} ищет вещь '{item_name}'.")
 
+        found = False
         for box_name in get_existing_boxes(csv_filename):
             if item_name in get_box_contents(csv_filename, box_name):
                 bot.send_message(message.chat.id, f"Вещь '{item_name}' найдена в коробке '{box_name}'.", reply_markup=states_menu)
+                logging.info(f"Вещь '{item_name}' найдена в коробке '{box_name}' для пользователя {message.chat.id}.")
                 found = True
                 break
 
         if not found:
             bot.send_message(message.chat.id, f"Вещь '{item_name}' не найдена. Попробуйте еще раз или вернитесь в главное меню.", reply_markup=back_to_main_menu)
+            logging.info(f"Вещь '{item_name}' не найдена для пользователя {message.chat.id}.")
 
         states[message.chat.id] = "main_menu"
 
