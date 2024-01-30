@@ -2,6 +2,7 @@
 
 from telebot import types
 import csv
+from commands import commands
 
 # Предполагаемая структура функции get_existing_boxes
 def get_existing_boxes(csv_filename):
@@ -25,7 +26,7 @@ def get_box_contents(csv_filename, box_name):
 def setup_search_commands(bot, csv_filename, states_menu, back_to_main_menu):
     states = {}  # Словарь для хранения состояний пользователей
 
-    @bot.message_handler(func=lambda message: message.text == "Поиск")
+    @bot.message_handler(func=lambda message: message.text == commands['search'])
     def handle_search_command(message):
         bot.send_message(message.chat.id, "Введите название вещи для поиска:", reply_markup=types.ReplyKeyboardRemove())
         states[message.chat.id] = "item_search"
@@ -52,3 +53,5 @@ def setup_search_commands(bot, csv_filename, states_menu, back_to_main_menu):
         states[message.chat.id] = "main_menu"
 
     return states
+
+# Конец search_commands.py

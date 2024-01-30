@@ -2,13 +2,14 @@
 
 from telebot import types
 from shared import get_box_contents, add_item_to_box, remove_item_from_box, get_existing_boxes
+from commands import commands
 
 def setup_item_management(bot, csv_filename, items_menu, back_to_main_menu, states, current_boxes):
     # Словарь для хранения введенных вещей перед выбором коробки
     pending_items = {}
 
     # Обработчик команды "Добавить"
-    @bot.message_handler(func=lambda message: message.text == "Добавить")
+    @bot.message_handler(func=lambda message: message.text == commands['add'])
     def handle_add_item(message):
         bot.send_message(message.chat.id, "Введите название вещи для добавления:", reply_markup=types.ReplyKeyboardRemove())
         states[message.chat.id] = "item_add_name"
@@ -42,7 +43,7 @@ def setup_item_management(bot, csv_filename, items_menu, back_to_main_menu, stat
         states[message.chat.id] = "items_options"
 
     # Обработчик команды "Удалить"
-    @bot.message_handler(func=lambda message: message.text == "Удалить")
+    @bot.message_handler(func=lambda message: message.text == commands['delete'])
     def handle_delete_item_init(message):
         existing_boxes = get_existing_boxes(csv_filename)
         if not existing_boxes:
@@ -87,3 +88,5 @@ def setup_item_management(bot, csv_filename, items_menu, back_to_main_menu, stat
 
     # Возвращаем измененные states и current_boxes
     return states, current_boxes
+
+# Конец item_management.py
