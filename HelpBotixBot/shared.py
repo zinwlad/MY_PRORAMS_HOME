@@ -12,7 +12,7 @@ def get_existing_boxes(csv_filename):
                 if row['BoxID'] and row['BoxName']:
                     existing_boxes[row['BoxID'].strip()] = row['BoxName'].strip()
     except FileNotFoundError as e:
-        logging.error(f"Файл {csv_filename} не найден: {e}")
+        logger.error(f"Файл {csv_filename} не найден: {e}")
     return existing_boxes
 
 def get_box_contents(csv_filename, box_id):
@@ -88,7 +88,7 @@ def remove_item_from_box(csv_filename, box_id, item):
             writer.writeheader()
             writer.writerows(rows_to_keep)
     except FileNotFoundError:
-        logging.error(f"Файл {csv_filename} не найден.")
+        logger.error(f"Файл {csv_filename} не найден.")
 
 def add_box(csv_filename, box_name):
     try:
