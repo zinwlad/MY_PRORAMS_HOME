@@ -1,13 +1,8 @@
 # item_management.py
-
+from logger_config import logger
 from telebot import types
-from shared import get_box_contents, add_item_to_box, remove_item_from_box, get_existing_boxes
+from shared import get_existing_boxes, get_box_contents, add_box, remove_box
 from commands import commands
-import logging
-
-# Настройка логирования с обработчиком файла
-logging.basicConfig(filename='item_management.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 
 def setup_item_management(bot, csv_filename, items_menu, back_to_main_menu, states, current_boxes):
     # Словарь для хранения введенных вещей перед выбором коробки

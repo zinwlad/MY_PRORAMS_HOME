@@ -1,14 +1,14 @@
 # box_management.py
-
+from logger_config import logger
 from telebot import types
 from shared import get_existing_boxes, get_box_contents, add_box, remove_box
 from commands import commands
-
 
 def setup_box_management(bot, csv_filename, states_menu, boxes_menu, back_to_main_menu, states, current_boxes):
     # Обработчик команды "Коробки"
     @bot.message_handler(func=lambda message: message.text == "Коробки")
     def handle_boxes_command(message):
+        logger.info("Обработчик команды 'Коробки' вызван.")
         bot.send_message(message.chat.id, "Выберите действие:", reply_markup=boxes_menu)
         states[message.chat.id] = "boxes_options"
 

@@ -1,13 +1,15 @@
-# HelpBotixBot_tg.py
-
-import telebot
+# main.py
 import os
+from logger_config import logger
+import telebot
 from telebot import types
+
 from config import bot_token
-import basic_commands
-import box_management
-import item_management
-import search_commands
+from basic_commands import setup_basic_commands
+from box_management import setup_box_management
+from item_management import setup_item_management
+from search_commands import setup_search_commands
+from shared import get_existing_boxes
 from commands import commands
 from barcode_scanner import scan_barcode
 
@@ -30,10 +32,11 @@ back_to_main_menu = types.ReplyKeyboardMarkup(resize_keyboard=True)
 back_to_main_menu.row(commands['back'])
 
 # Инициализация обработчиков команд
-states, current_boxes = basic_commands.setup_basic_commands(bot, states_menu, csv_filename)
-states, current_boxes = box_management.setup_box_management(bot, csv_filename, states_menu, boxes_menu, back_to_main_menu, states, current_boxes)
-states, current_boxes = item_management.setup_item_management(bot, csv_filename, items_menu, back_to_main_menu, states, current_boxes)
-states = search_commands.setup_search_commands(bot, csv_filename, states_menu, back_to_main_menu)
+states, current_boxes = setup_basic_commands(bot, states_menu, csv_filename)
+states, current_boxes = setup_box_management(bot, csv_filename, states_menu, boxes_menu, back_to_main_menu, states, current_boxes)
+states, current_boxes = setup_item_management(bot, csv_filename, items_menu, back_to_main_menu, states, current_boxes)
+states = setup_search_commands(bot, csv_filename, states_menu, back_to_main_menu)
+
 
 # Обработчики команд для новых клавиатур
 @bot.message_handler(func=lambda message: message.text == commands['items'])
@@ -61,6 +64,8 @@ def process_scan_command(message):
 
 
 # Запуск бота
-bot.polling(none_stop=True)
-
-# Конец HelpBotixBot_tg.py
+if __name__ == "__main__":
+    try:
+        bot.polling(none_stop=True)
+    except Exception as e:
+        print(f"Произошла ошибка при запуске бота: {e}")

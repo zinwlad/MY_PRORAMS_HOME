@@ -1,8 +1,7 @@
 # shared.py
+from logger_config import logger
 import csv
-import logging
 from telebot import types
-from commands import commands
 
 def get_existing_boxes(csv_filename):
     existing_boxes = {}
