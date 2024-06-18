@@ -1,0 +1,84 @@
+# Python
+*.pyc
+*~
+__pycache__
+
+# Env
+.env
+myvenv/
+venv/
+
+# Database
+db.sqlite3
+
+# Static folder at project root# Python
+*.pyc
+*~
+__pycache__
+
+# Env
+.env
+myvenv/
+venv/
+
+# Database
+db.sqlite3
+
+# Static folder at project root
+/static/
+
+# macOS
+._*
+.DS_Store
+.fseventsd
+.Spotlight-V100
+
+# Windows
+Thumbs.db*
+ehthumbs*.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Visual Studio
+.vscode/
+.history/
+*.code-workspace
+
+.idea/
+/static/
+
+# macOS
+._*
+.DS_Store
+.fseventsd
+.Spotlight-V100
+
+# Windows
+Thumbs.db*
+ehthumbs*.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Visual Studio
+.vscode/
+.history/
+*.code-workspace
+
+.idea/TryCatch-Projects.iml
+.idea.misc.xml
+.idea/modules.xml
+.idea/vsc.xml
+.idea/workspace.xml
+.idea/inspectionProfiles/profiles_settings.xml
+
+Projects-1/Text Editor/net-textedit.py
+
+Demo/
+
+.~lock.Pythonprojects1.rtf#
+
+Python Password Generator .pdf
+
+Projects-1.zip
+
+Projects2.zip
