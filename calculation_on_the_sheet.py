@@ -72,13 +72,13 @@ class RectangleCalculatorApp:
         paper_size = self.get_selected_paper_size()
 
         if paper_size == "Все размеры":
-            return  # Не делаем ничего, если выбрана опция "Все размеры"
+            return
 
         length_entry_value = self.length_entry.get().strip()
         width_entry_value = self.width_entry.get().strip()
 
         if not length_entry_value or not width_entry_value:
-            return  # Если поля для ввода пустые, не выполняем проверку и дальнейшие действия
+            return
 
         try:
             rect_length = self.validate_numeric_input(length_entry_value)
