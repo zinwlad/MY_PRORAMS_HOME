@@ -17,7 +17,7 @@ class RectangleCalculatorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Расчет количества прямоугольников на листе бумаги")
-        self.root.minsize(600, 400)  # Минимальные размеры окна
+        self.root.minsize(600, 400)
 
         self.create_widgets()
 
