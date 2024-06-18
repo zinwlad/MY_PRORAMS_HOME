@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 
-
 class RectangleCalculatorApp:
     PAPER_SIZES = {
         "Выберите размер бумаги": None,
@@ -18,32 +17,39 @@ class RectangleCalculatorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Расчет количества прямоугольников на листе бумаги")
+        self.root.minsize(600, 400)  # Минимальные размеры окна
 
         self.create_widgets()
 
     def create_widgets(self):
-        self.paper_size_combobox = ttk.Combobox(self.root, values=list(self.PAPER_SIZES.keys()))
-        self.paper_size_combobox.grid(row=0, column=1, padx=5, pady=5)
+        # Группировка элементов в LabelFrame
+        frame = ttk.LabelFrame(self.root, text="Параметры прямоугольника и бумаги")
+        frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        self.paper_size_combobox = ttk.Combobox(frame, values=list(self.PAPER_SIZES.keys()))
+        self.paper_size_combobox.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
         self.paper_size_combobox.set("Выберите размер бумаги")
 
-        tk.Label(self.root, text="Длина прямоугольника (мм):").grid(row=1, column=0, padx=5, pady=5)
-        self.length_entry = tk.Entry(self.root)
-        self.length_entry.grid(row=1, column=1, padx=5, pady=5)
+        tk.Label(frame, text="Длина прямоугольника (мм):").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+        self.length_entry = tk.Entry(frame)
+        self.length_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
-        tk.Label(self.root, text="Ширина прямоугольника (мм):").grid(row=2, column=0, padx=5, pady=5)
-        self.width_entry = tk.Entry(self.root)
-        self.width_entry.grid(row=2, column=1, padx=5, pady=5)
+        tk.Label(frame, text="Ширина прямоугольника (мм):").grid(row=2, column=0, padx=5, pady=5, sticky="e")
+        self.width_entry = tk.Entry(frame)
+        self.width_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
-        tk.Button(self.root, text="Рассчитать", command=self.calculate_and_display_results).grid(row=3, column=0,
-                                                                                                 padx=5, pady=5)
-        tk.Button(self.root, text="Очистить", command=self.clear_entries).grid(row=3, column=1, padx=5, pady=5)
+        tk.Button(frame, text="Рассчитать", command=self.calculate_and_display_results).grid(row=3, column=0, padx=5, pady=5, sticky="ew")
+        tk.Button(frame, text="Очистить", command=self.clear_entries).grid(row=3, column=1, padx=5, pady=5, sticky="ew")
 
-        self.result_label = tk.Label(self.root, text="")
-        self.result_label.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
+        self.result_label = tk.Label(frame, text="", wraplength=400, justify="left")
+        self.result_label.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="ew")
 
         self.canvas = tk.Canvas(self.root, width=450, height=450, bg="white")
-        self.canvas.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
+        self.canvas.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         self.canvas.bind("<Configure>", self.draw_on_canvas)
+
+        self.root.grid_rowconfigure(1, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
 
     def validate_numeric_input(self, value: str) -> int:
         if not value.strip():  # Если строка пустая или состоит только из пробелов
@@ -82,20 +88,20 @@ class RectangleCalculatorApp:
                 paper_length, paper_width = self.PAPER_SIZES[paper_size]
 
                 scale = min(self.canvas.winfo_width() / paper_width, self.canvas.winfo_height() / paper_length)
-                scaled_paper_width = paper_width * scale
-                scaled_paper_length = paper_length * scale
+                margin_x = (self.canvas.winfo_width() - paper_width * scale) / 2
+                margin_y = (self.canvas.winfo_height() - paper_length * scale) / 2
                 scaled_rect_width = rect_width * scale
                 scaled_rect_length = rect_length * scale
 
-                self.canvas.create_rectangle(0, 0, scaled_paper_width, scaled_paper_length, outline="black")
-
                 for i in range(paper_length // rect_length):
                     for j in range(paper_width // rect_width):
-                        x0 = j * scaled_rect_width
-                        y0 = i * scaled_rect_length
+                        x0 = margin_x + j * scaled_rect_width
+                        y0 = margin_y + i * scaled_rect_length
                         x1 = x0 + scaled_rect_width
                         y1 = y0 + scaled_rect_length
                         self.canvas.create_rectangle(x0, y0, x1, y1, outline="blue")
+                self.canvas.create_rectangle(margin_x, margin_y, margin_x + paper_width * scale, margin_y + paper_length * scale, outline="black")
+
             else:
                 messagebox.showerror("Ошибка", "Выберите корректный размер бумаги.")
         except ValueError as e:
@@ -118,12 +124,13 @@ class RectangleCalculatorApp:
             elif paper_size == "Свой размер":
                 custom_length = simpledialog.askstring("Пользовательский размер", "Введите длину бумаги (мм):")
                 custom_width = simpledialog.askstring("Пользовательский размер", "Введите ширину бумаги (мм):")
-                custom_length = self.validate_numeric_input(custom_length)
-                custom_width = self.validate_numeric_input(custom_width)
-                paper_length, paper_width = custom_length, custom_width
-                result = self.calculate_num_rectangles(rect_length, rect_width, paper_length, paper_width)
-                self.result_label.config(text=f"Количество прямоугольников: {result}")
-                self.draw_on_canvas()
+                if custom_length is not None and custom_width is not None:
+                    custom_length = self.validate_numeric_input(custom_length)
+                    custom_width = self.validate_numeric_input(custom_width)
+                    paper_length, paper_width = custom_length, custom_width
+                    result = self.calculate_num_rectangles(rect_length, rect_width, paper_length, paper_width)
+                    self.result_label.config(text=f"Количество прямоугольников: {result}")
+                    self.draw_on_canvas()
             elif paper_size in self.PAPER_SIZES:
                 paper_length, paper_width = self.PAPER_SIZES[paper_size]
                 result = self.calculate_num_rectangles(rect_length, rect_width, paper_length, paper_width)
@@ -133,8 +140,6 @@ class RectangleCalculatorApp:
                 raise ValueError("Выберите размер бумаги.")
         except ValueError as e:
             messagebox.showerror("Ошибка", str(e))
-        except TypeError:
-            pass
 
     def clear_entries(self):
         self.length_entry.delete(0, tk.END)
@@ -145,11 +150,6 @@ class RectangleCalculatorApp:
 
     def get_selected_paper_size(self) -> str:
         return self.paper_size_combobox.get()
-
-    def get_rect_dimensions(self) -> tuple:
-        rect_length = self.validate_numeric_input(self.length_entry.get())
-        rect_width = self.validate_numeric_input(self.width_entry.get())
-        return rect_length, rect_width
 
 
 if __name__ == "__main__":
