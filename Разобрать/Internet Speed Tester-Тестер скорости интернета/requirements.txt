@@ -1,4 +1,0 @@
-pyspeedtest
-speedtest
-speedtest-cli
-

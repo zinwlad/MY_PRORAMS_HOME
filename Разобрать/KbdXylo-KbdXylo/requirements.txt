@@ -1,6 +1,0 @@
-boombox
-pynput
-
-# POSIX
-gobject
-PyGObject
