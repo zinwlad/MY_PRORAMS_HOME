@@ -105,7 +105,6 @@ class RectangleCalculatorApp:
         except ValueError as e:
             messagebox.showerror("Ошибка", str(e))
         except TypeError:
-            # Если пользователь закрыл диалоговое окно без ввода данных
             pass
 
     def clear_entries(self):
