@@ -1,9 +1,7 @@
 import fitz  # PyMuPDF
 import os
-import logging
-
-# Настройка логирования
-logging.basicConfig(filename='pdf_analysis.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 def points_to_mm(points):
     """Преобразует размеры из точек в миллиметры."""
@@ -12,16 +10,12 @@ def points_to_mm(points):
 def analyze_pdf(pdf_path):
     """Анализирует PDF-файл и собирает статистику."""
     if not os.path.isfile(pdf_path):
-        print(f"Файл по указанному пути не существует: {pdf_path}")
-        return
+        return f"Файл по указанному пути не существует: {pdf_path}"
 
     try:
         doc = fitz.open(pdf_path)
-        logging.info(f"Успешно открыт PDF файл: {pdf_path}")
     except Exception as e:
-        print(f"Не удалось открыть PDF-файл: {e}")
-        logging.error(f"Не удалось открыть PDF-файл: {e}")
-        return
+        return f"Не удалось открыть PDF-файл: {e}"
 
     total_pages = doc.page_count
     rgb_pages = set()
@@ -33,8 +27,6 @@ def analyze_pdf(pdf_path):
         try:
             page = doc.load_page(page_num)
         except Exception as e:
-            print(f"Не удалось загрузить страницу {page_num + 1}: {e}")
-            logging.error(f"Не удалось загрузить страницу {page_num + 1}: {e}")
             continue
 
         page_size = page.rect
@@ -50,8 +42,7 @@ def analyze_pdf(pdf_path):
                     font_name = font['fontname']
                     font_set.add(font_name)
         except Exception as e:
-            print(f"Не удалось получить информацию о шрифтах на странице {page_num + 1}: {e}")
-            logging.error(f"Не удалось получить информацию о шрифтах на странице {page_num + 1}: {e}")
+            pass
 
         try:
             images = page.get_images(full=True)
@@ -64,8 +55,7 @@ def analyze_pdf(pdf_path):
                     elif pix.colorspace.n == 4:
                         cmyk_pages.add(page_num + 1)
         except Exception as e:
-            print(f"Не удалось получить изображения на странице {page_num + 1}: {e}")
-            logging.error(f"Не удалось получить изображения на странице {page_num + 1}: {e}")
+            pass
 
     doc.close()
 
@@ -75,29 +65,50 @@ def analyze_pdf(pdf_path):
     else:
         page_format = "Разные размеры страниц"
 
-    # Вывод статистики
-    print(f"\nКоличество страниц: {total_pages}")
-    print(f"Формат страниц: {page_format}")
+    # Формирование результата
+    result = []
+    result.append(f"Количество страниц: {total_pages}")
+    result.append(f"Формат страниц: {page_format}")
 
-    print("\nRGB изображения находятся на страницах:")
+    result.append("\nRGB изображения находятся на страницах:")
     if rgb_pages:
-        print(", ".join(map(str, sorted(rgb_pages))))
+        result.append(", ".join(map(str, sorted(rgb_pages))))
     else:
-        print("Нет изображений в RGB цвете.")
+        result.append("Нет изображений в RGB цвете.")
 
-    print("\nCMYK изображения находятся на страницах:")
+    result.append("\nCMYK изображения находятся на страницах:")
     if cmyk_pages:
-        print(", ".join(map(str, sorted(cmyk_pages))))
+        result.append(", ".join(map(str, sorted(cmyk_pages))))
     else:
-        print("Нет изображений в CMYK цвете.")
+        result.append("Нет изображений в CMYK цвете.")
 
-    print("\nИспользованные шрифты:")
+    result.append("\nИспользованные шрифты:")
     if font_set:
         for font in sorted(font_set):
-            print(f"  - {font}")
+            result.append(f"  - {font}")
     else:
-        print("Шрифты отсутствуют или недоступны.")
+        result.append("Шрифты отсутствуют или недоступны.")
 
-if __name__ == "__main__":
-    pdf_file_path = input("Введите путь к PDF-файлу: ").strip()
-    analyze_pdf(pdf_file_path)
+    return "\n".join(result)
+
+def browse_file():
+    """Открывает диалоговое окно для выбора файла PDF и запускает анализ."""
+    file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+    if file_path:
+        result_text = analyze_pdf(file_path)
+        text_area.delete(1.0, tk.END)
+        text_area.insert(tk.END, result_text)
+
+# Создание главного окна
+root = tk.Tk()
+root.title("Анализатор PDF")
+
+# Создание и размещение элементов интерфейса
+open_button = tk.Button(root, text="Выбрать PDF файл", command=browse_file)
+open_button.pack(pady=10)
+
+text_area = tk.Text(root, wrap=tk.WORD, height=20, width=80)
+text_area.pack(padx=10, pady=10)
+
+# Запуск основного цикла
+root.mainloop()
