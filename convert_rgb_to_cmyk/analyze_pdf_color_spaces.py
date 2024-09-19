@@ -22,6 +22,11 @@ def analyze_pdf(pdf_path):
     cmyk_pages = set()
     font_set = set()
     page_sizes_mm = []
+    text_blocks_count = 0
+    words_count = 0
+    chars_count = 0
+    image_stats = {'RGB': 0, 'CMYK': 0, 'Grayscale': 0}
+    font_sizes = []
 
     for page_num in range(total_pages):
         try:
@@ -40,7 +45,16 @@ def analyze_pdf(pdf_path):
                 fonts = page_dict['fonts']
                 for font in fonts:
                     font_name = font['fontname']
+                    font_size = font.get('size', 0)
                     font_set.add(font_name)
+                    font_sizes.append(font_size)
+            if 'blocks' in page_dict:
+                text_blocks_count += len(page_dict['blocks'])
+                for block in page_dict['blocks']:
+                    if block['type'] == 0:  # Text block
+                        for line in block['lines']:
+                            words_count += len(line['spans'])
+                            chars_count += sum(len(span['text']) for span in line['spans'])
         except Exception as e:
             pass
 
@@ -52,8 +66,12 @@ def analyze_pdf(pdf_path):
                     pix = fitz.Pixmap(doc, xref)
                     if pix.colorspace.n == 3:
                         rgb_pages.add(page_num + 1)
+                        image_stats['RGB'] += 1
                     elif pix.colorspace.n == 4:
                         cmyk_pages.add(page_num + 1)
+                        image_stats['CMYK'] += 1
+                    elif pix.colorspace.n == 1:  # Assuming grayscale
+                        image_stats['Grayscale'] += 1
         except Exception as e:
             pass
 
@@ -88,6 +106,18 @@ def analyze_pdf(pdf_path):
             result.append(f"  - {font}")
     else:
         result.append("Шрифты отсутствуют или недоступны.")
+
+    result.append(f"\nКоличество текстовых блоков: {text_blocks_count}")
+    result.append(f"Количество слов: {words_count}")
+    result.append(f"Количество символов: {chars_count}")
+
+    result.append("\nСтатистика по изображениям:")
+    for color_space, count in image_stats.items():
+        result.append(f"  - {color_space}: {count}")
+
+    if font_sizes:
+        result.append(f"\nМинимальный размер шрифта: {min(font_sizes)}")
+        result.append(f"Максимальный размер шрифта: {max(font_sizes)}")
 
     return "\n".join(result)
 
