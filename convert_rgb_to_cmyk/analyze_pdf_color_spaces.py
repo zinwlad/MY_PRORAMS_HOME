@@ -2,6 +2,8 @@ import fitz  # PyMuPDF
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from tkinter import ttk
+from docx import Document
 
 def points_to_mm(points):
     """Преобразует размеры из точек в миллиметры."""
@@ -9,9 +11,6 @@ def points_to_mm(points):
 
 def analyze_pdf(pdf_path):
     """Анализирует PDF-файл и собирает статистику."""
-    if not os.path.isfile(pdf_path):
-        return f"Файл по указанному пути не существует: {pdf_path}"
-
     try:
         doc = fitz.open(pdf_path)
     except Exception as e:
@@ -187,31 +186,85 @@ def analyze_pdf(pdf_path):
 
     return "\n".join(result)
 
+def analyze_docx(docx_path):
+    """Анализирует DOCX-файл и собирает статистику."""
+    try:
+        doc = Document(docx_path)
+    except Exception as e:
+        return f"Не удалось открыть DOCX-файл: {e}"
+
+    total_paragraphs = len(doc.paragraphs)
+    total_runs = sum(len(p.runs) for p in doc.paragraphs)
+    total_words = sum(len(p.text.split()) for p in doc.paragraphs)
+    total_chars = sum(len(p.text) for p in doc.paragraphs)
+
+    result = []
+    result.append(f"Количество абзацев: {total_paragraphs}")
+    result.append(f"Количество строк: {total_runs}")
+    result.append(f"Количество слов: {total_words}")
+    result.append(f"Количество символов: {total_chars}")
+
+    return "\n".join(result)
+
+def analyze_txt(txt_path):
+    """Анализирует TXT-файл и собирает статистику."""
+    try:
+        with open(txt_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+    except Exception as e:
+        return f"Не удалось открыть TXT-файл: {e}"
+
+    total_lines = content.count('\n')
+    total_words = len(content.split())
+    total_chars = len(content)
+
+    result = []
+    result.append(f"Количество строк: {total_lines}")
+    result.append(f"Количество слов: {total_words}")
+    result.append(f"Количество символов: {total_chars}")
+
+    return "\n".join(result)
+
 def browse_file():
-    """Открывает диалоговое окно для выбора файла PDF и запускает анализ."""
-    file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+    """Открывает диалоговое окно для выбора файла и запускает анализ."""
+    file_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf"), ("DOCX files", "*.docx"), ("Text files", "*.txt")])
     if file_path:
-        result_text = analyze_pdf(file_path)
-        text_area.delete(1.0, tk.END)
-        text_area.insert(tk.END, result_text)
+        extension = os.path.splitext(file_path)[1].lower()
+        if extension == '.pdf':
+            result_text = analyze_pdf(file_path)
+        elif extension == '.docx':
+            result_text = analyze_docx(file_path)
+        elif extension == '.txt':
+            result_text = analyze_txt(file_path)
+        else:
+            result_text = "Неподдерживаемый формат файла."
+        result_text_widget.config(state=tk.NORMAL)
+        result_text_widget.delete(1.0, tk.END)
+        result_text_widget.insert(tk.END, result_text)
+        result_text_widget.config(state=tk.DISABLED)
 
-def reset_text_area():
-    """Сбрасывает текстовое поле."""
-    text_area.delete(1.0, tk.END)
+def reset():
+    """Сбрасывает результаты и очищает текстовое поле."""
+    result_text_widget.config(state=tk.NORMAL)
+    result_text_widget.delete(1.0, tk.END)
+    result_text_widget.config(state=tk.DISABLED)
 
-# Создание главного окна
+# Настройка интерфейса
 root = tk.Tk()
-root.title("Анализатор PDF")
+root.title("Анализатор файлов")
 
-# Создание и размещение элементов интерфейса
-open_button = tk.Button(root, text="Выбрать PDF файл", command=browse_file)
-open_button.pack(pady=10)
+frame = tk.Frame(root)
+frame.pack(padx=10, pady=10)
 
-reset_button = tk.Button(root, text="Сбросить", command=reset_text_area)
-reset_button.pack(pady=10)
+browse_button = tk.Button(frame, text="Открыть файл", command=browse_file)
+browse_button.pack(side=tk.LEFT)
 
-text_area = tk.Text(root, wrap=tk.WORD, height=30, width=80)
-text_area.pack(padx=10, pady=10)
+reset_button = tk.Button(frame, text="Сброс", command=reset)
+reset_button.pack(side=tk.LEFT)
 
-# Запуск основного цикла
+result_text_widget = tk.Text(root, wrap=tk.WORD, height=20, width=80)
+result_text_widget.pack(padx=10, pady=10)
+result_text_widget.config(state=tk.DISABLED)
+
+# Запуск основного цикла обработки событий
 root.mainloop()
