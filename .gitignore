@@ -1,3 +1,20 @@
-/config.py
-.idea/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
 dist/
+build/
+*.spec
+
+# Virtual Environment
+venv/
+env/
+.env/
+
+# IDE
+.vscode/
+.idea/
+
+/config.py
