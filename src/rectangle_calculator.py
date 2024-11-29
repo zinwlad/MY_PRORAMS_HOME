@@ -4,6 +4,10 @@ import json
 from reportlab.pdfgen import canvas as pdf_canvas
 from reportlab.lib.units import mm
 import os
+import pandas as pd
+from PIL import Image, ImageDraw
+import math
+from datetime import datetime
 
 PAPER_SIZES = {
     "Выберите размер бумаги": None,
@@ -19,8 +23,7 @@ PAPER_SIZES = {
 
 UNITS = {
     "мм": 1,
-    "см": 10,
-    "дюймы": 25.4
+    "см": 10
 }
 
 DEFAULT_TEMPLATE = {
@@ -49,42 +52,56 @@ class RectangleCalculatorApp:
         self.result_frame = ttk.LabelFrame(root, text="Результаты")
         self.result_frame.grid(row=1, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
 
+        # Добавляем фрейм для предпросмотра
+        self.preview_frame = ttk.LabelFrame(root, text="Предпросмотр")
+        self.preview_frame.grid(row=0, column=2, rowspan=2, padx=5, pady=5, sticky="nsew")
+
         # Основные параметры
         ttk.Label(self.input_frame, text="Размер бумаги:").grid(row=0, column=0, padx=5, pady=5)
         self.paper_size_combobox = ttk.Combobox(self.input_frame, values=list(PAPER_SIZES.keys()))
         self.paper_size_combobox.grid(row=0, column=1, padx=5, pady=5)
         self.paper_size_combobox.set("Выберите размер бумаги")
+        self.paper_size_combobox.bind('<<ComboboxSelected>>', self.on_paper_size_change)
 
         # Единицы измерения
         ttk.Label(self.input_frame, text="Единицы измерения:").grid(row=1, column=0, padx=5, pady=5)
         self.units_var = tk.StringVar(value="мм")
         self.units_combobox = ttk.Combobox(self.input_frame, values=list(UNITS.keys()), textvariable=self.units_var)
         self.units_combobox.grid(row=1, column=1, padx=5, pady=5)
+        self.units_combobox.bind('<<ComboboxSelected>>', self.on_input_change)
 
         # Размеры прямоугольника
         ttk.Label(self.input_frame, text="Длина:").grid(row=2, column=0, padx=5, pady=5)
         self.length_entry = ttk.Entry(self.input_frame)
         self.length_entry.grid(row=2, column=1, padx=5, pady=5)
+        self.length_entry.bind('<KeyRelease>', self.on_input_change)
 
         ttk.Label(self.input_frame, text="Ширина:").grid(row=3, column=0, padx=5, pady=5)
         self.width_entry = ttk.Entry(self.input_frame)
         self.width_entry.grid(row=3, column=1, padx=5, pady=5)
+        self.width_entry.bind('<KeyRelease>', self.on_input_change)
 
         # Расстояние между листами
         ttk.Label(self.input_frame, text="Расстояние между:").grid(row=4, column=0, padx=5, pady=5)
         self.spacing_entry = ttk.Entry(self.input_frame)
         self.spacing_entry.grid(row=4, column=1, padx=5, pady=5)
         self.spacing_entry.insert(0, "0")
+        self.spacing_entry.bind('<KeyRelease>', self.on_input_change)
 
-        # Количество
-        ttk.Label(self.input_frame, text="Тираж:").grid(row=5, column=0, padx=5, pady=5)
-        self.quantity_entry = ttk.Entry(self.input_frame)
-        self.quantity_entry.grid(row=5, column=1, padx=5, pady=5)
-        self.quantity_entry.insert(0, "1")
+        # Информация о количестве прямоугольников
+        ttk.Label(self.input_frame, text="Помещается на листе:").grid(row=5, column=0, padx=5, pady=5)
+        self.fits_label = ttk.Label(self.input_frame, text="")
+        self.fits_label.grid(row=5, column=1, padx=5, pady=5)
+
+        # Количество прямоугольников
+        ttk.Label(self.input_frame, text="Количество прямоугольников:").grid(row=6, column=0, padx=5, pady=5)
+        self.quantity_var = tk.StringVar(value="1")
+        self.quantity_entry = ttk.Entry(self.input_frame, textvariable=self.quantity_var)
+        self.quantity_entry.grid(row=6, column=1, padx=5, pady=5)
 
         # Кнопки управления
         self.buttons_frame = ttk.Frame(self.input_frame)
-        self.buttons_frame.grid(row=6, column=0, columnspan=2, pady=10)
+        self.buttons_frame.grid(row=7, column=0, columnspan=2, pady=10)
 
         ttk.Button(self.buttons_frame, text="Рассчитать", command=self.calculate_and_display_results).grid(row=0,
                                                                                                            column=0,
@@ -105,6 +122,8 @@ class RectangleCalculatorApp:
         ttk.Button(self.template_frame, text="Удалить шаблон", command=self.delete_template).grid(row=2, column=0,
                                                                                                   columnspan=2, padx=5,
                                                                                                   pady=5)
+        ttk.Button(self.template_frame, text="Дублировать шаблон", command=self.duplicate_template).grid(row=3, column=0,
+                                                                                                  padx=5, pady=5)
 
         # Результаты
         self.result_label = ttk.Label(self.result_frame, text="")
@@ -113,10 +132,45 @@ class RectangleCalculatorApp:
         self.canvas = tk.Canvas(self.result_frame, width=450, height=450, bg="white")
         self.canvas.grid(row=1, column=0, padx=5, pady=5)
 
+        ttk.Button(self.result_frame, text="Сохранить в Excel", command=self.save_to_excel).grid(row=4, column=0, padx=5, pady=5)
+        ttk.Button(self.result_frame, text="Обновить предпросмотр", command=self.update_preview).grid(row=4, column=1, padx=5, pady=5)
+
         # Настройка расширяемости grid
         root.grid_rowconfigure(1, weight=1)
         root.grid_columnconfigure(0, weight=1)
         root.grid_columnconfigure(1, weight=1)
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.add_tooltips()
+
+    def add_tooltips(self):
+        def create_tooltip(widget, text):
+            def show_tooltip(event):
+                tooltip = tk.Toplevel()
+                tooltip.wm_overrideredirect(True)
+                tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+                
+                label = ttk.Label(tooltip, text=text, justify='left',
+                                relief='solid', borderwidth=1)
+                label.pack()
+                
+                def hide_tooltip():
+                    tooltip.destroy()
+                
+                widget.tooltip = tooltip
+                widget.bind('<Leave>', lambda e: hide_tooltip())
+                
+            widget.bind('<Enter>', show_tooltip)
+
+        # Добавляем подсказки к полям ввода
+        create_tooltip(self.length_entry, "Введите длину прямоугольника в выбранных единицах измерения")
+        create_tooltip(self.width_entry, "Введите ширину прямоугольника в выбранных единицах измерения")
+        create_tooltip(self.spacing_entry, "Введите расстояние между прямоугольниками")
+        create_tooltip(self.quantity_entry, 
+            "Укажите общее количество прямоугольников, которые нужно разместить.\n" + 
+            "Программа рассчитает, сколько листов бумаги потребуется для печати.")
 
     def validate_numeric_input(self, value: str) -> int:
         try:
@@ -362,6 +416,106 @@ class RectangleCalculatorApp:
             messagebox.showerror("Ошибка", str(e))
         except TypeError:
             pass
+
+    def save_to_excel(self):
+        if not hasattr(self, 'last_calculation'):
+            messagebox.showwarning("Предупреждение", "Сначала выполните расчет!")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            initialfile=f"rectangle_calculation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        )
+        
+        if file_path:
+            df = pd.DataFrame([{
+                'Размер бумаги': self.paper_size_combobox.get(),
+                'Длина прямоугольника': self.length_entry.get(),
+                'Ширина прямоугольника': self.width_entry.get(),
+                'Отступ': self.spacing_entry.get(),
+                'Требуемое количество': self.quantity_entry.get(),
+                'Количество на листе': self.last_calculation['rectangles_per_sheet'],
+                'Необходимое количество листов': self.last_calculation['sheets_needed'],
+                'Единицы измерения': self.units_var.get()
+            }])
+            
+            df.to_excel(file_path, index=False)
+            messagebox.showinfo("Успех", "Данные успешно сохранены в Excel файл!")
+
+    def update_preview(self):
+        if not hasattr(self, 'last_calculation'):
+            messagebox.showwarning("Предупреждение", "Сначала выполните расчет!")
+            return
+
+        # Создаем изображение для предпросмотра
+        scale = 0.5  # масштаб для отображения
+        paper_size = PAPER_SIZES[self.paper_size_combobox.get()]
+        if not paper_size or paper_size == "Special" or paper_size == "Custom":
+            messagebox.showwarning("Предупреждение", "Выберите конкретный размер бумаги для предпросмотра")
+            return
+
+        img = Image.new('RGB', (int(paper_size[0] * scale), int(paper_size[1] * scale)), 'white')
+        draw = ImageDraw.Draw(img)
+
+        # Рисуем прямоугольники
+        rect_length = float(self.length_entry.get()) * scale
+        rect_width = float(self.width_entry.get()) * scale
+        spacing = float(self.spacing_entry.get()) * scale
+
+        x, y = spacing, spacing
+        for _ in range(self.last_calculation['rectangles_per_sheet']):
+            draw.rectangle([x, y, x + rect_width, y + rect_length], outline='black')
+            x += rect_width + spacing
+            if x + rect_width > paper_size[0] * scale:
+                x = spacing
+                y += rect_length + spacing
+
+        # Отображаем предпросмотр
+        # TODO: Добавить код для отображения изображения в preview_frame
+
+    def duplicate_template(self):
+        if not self.selected_template:
+            messagebox.showwarning("Предупреждение", "Выберите шаблон для дублирования!")
+            return
+
+        template = self.templates[self.selected_template].copy()
+        new_name = f"{template['name']}_копия"
+        template['name'] = new_name
+        self.templates[new_name] = template
+        with open("templates.json", "w") as file:
+            json.dump(self.templates, file)
+        self.update_template_list()
+        messagebox.showinfo("Успех", f"Шаблон '{new_name}' создан!")
+
+    def on_paper_size_change(self, event=None):
+        selected_size = self.paper_size_combobox.get()
+        if selected_size == "Все размеры":
+            self.quantity_entry.config(state='disabled')
+            self.fits_label.config(text="")
+        else:
+            self.quantity_entry.config(state='normal')
+            self.on_input_change()
+
+    def on_input_change(self, event=None):
+        try:
+            # Получаем текущие значения
+            current_unit = self.units_var.get()
+            rect_length = self.convert_to_mm(float(self.length_entry.get()), current_unit)
+            rect_width = self.convert_to_mm(float(self.width_entry.get()), current_unit)
+            spacing = self.convert_to_mm(float(self.spacing_entry.get()), current_unit)
+
+            selected_paper_size = self.paper_size_combobox.get()
+            if selected_paper_size not in PAPER_SIZES or selected_paper_size in ["Выберите размер бумаги", "Все размеры", "Свой размер"]:
+                self.fits_label.config(text="")
+                return
+
+            paper_length, paper_width = PAPER_SIZES[selected_paper_size]
+            total_rect, _ = self.calculate_num_rectangles(rect_length, rect_width, paper_length, paper_width, spacing)
+            self.fits_label.config(text=f"{total_rect} шт.")
+
+        except (ValueError, TypeError):
+            self.fits_label.config(text="")
 
 
 if __name__ == "__main__":
